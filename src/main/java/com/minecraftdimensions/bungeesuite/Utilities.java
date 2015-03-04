@@ -1,11 +1,11 @@
 package com.minecraftdimensions.bungeesuite;
 
+import java.util.regex.Pattern;
+
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.WordUtils;
 
 import com.google.common.net.InetAddresses;
-
-import net.md_5.bungee.api.ChatColor;
 
 public class Utilities {
 	
@@ -43,7 +43,12 @@ public class Utilities {
 		return output;
 	}
 
+	//The same as the regular one, but I've removed the 'magic' formatting.
 	public static String colorize(String input) {
-		return ChatColor.translateAlternateColorCodes('&', input);
+		//return ChatColor.translateAlternateColorCodes('&', input);
+		String fixedString;
+		Pattern chatColorPattern = Pattern.compile("(?i)&([0-9A-Fa-fL-Ol-oRr])");
+		fixedString = chatColorPattern.matcher(input).replaceAll("\u00A7$1");
+		return fixedString;
 	}
 }

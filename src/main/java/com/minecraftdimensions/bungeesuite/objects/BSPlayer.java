@@ -2,14 +2,16 @@ package com.minecraftdimensions.bungeesuite.objects;
 
 import com.minecraftdimensions.bungeesuite.configs.ChatConfig;
 import com.minecraftdimensions.bungeesuite.managers.ChatManager;
+
 import net.md_5.bungee.api.ProxyServer;
+import net.md_5.bungee.api.chat.TextComponent;
 import net.md_5.bungee.api.config.ServerInfo;
 import net.md_5.bungee.api.connection.ProxiedPlayer;
 import net.md_5.bungee.api.connection.Server;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.UUID;
 
 
 public class BSPlayer {
@@ -21,26 +23,64 @@ public class BSPlayer {
     private boolean chatspying;
     private boolean dnd;
     private boolean afk;
-    private boolean acceptingTeleports;
     private ArrayList<String> ignores = new ArrayList<>();
     private ArrayList<Channel> channels = new ArrayList<>();
-    private HashMap<String, ArrayList<Home>> homes = new HashMap<>();
-    private Location deathBackLocation;
-    private Location teleportBackLocation;
-    private boolean lastBack; //true = death false = teleport
     private String replyPlayer;
     private boolean firstConnect = true;
+    private UUID uuid;
+    
+    //Chat Alerts
+    //private String alertColour;
+    //private boolean alertToggle;
 
-    public BSPlayer( String name, String nickname, String channel, boolean muted, boolean chatspying, boolean dnd, boolean tps ) {
+    public BSPlayer(String name, String nickname, String channel, boolean muted, boolean chatspying, boolean dnd, UUID uuid/*, String inAlertColour, boolean inAlertToggle*/) {
         this.playername = name;
         this.nickname = nickname;
         this.channel = channel;
         this.muted = muted;
         this.chatspying = chatspying;
         this.dnd = dnd;
-        this.acceptingTeleports = tps;
+        this.uuid = uuid;
+        //this.alertColour = inAlertColour;
+        //this.alertToggle = inAlertToggle;
     }
 
+    //UUID
+    
+    public UUID getUUID()
+    {
+    	return uuid;
+    }
+    
+    public UUID setUUID()
+    {
+    	uuid = getProxiedPlayer().getUniqueId();
+    	return uuid;
+    }
+    
+    //Alerts
+    /*public boolean getAlertToggle()
+    {
+    	return alertToggle;
+    }
+    
+    public void setAlertToggle(boolean inAlertToggle)
+    {
+    	alertToggle = inAlertToggle;
+    }
+    
+    public String getAlertColour()
+    {
+    	return alertColour;
+    }
+    
+    public void setAlertColour(String inAlertColour)
+    {
+    	alertColour = inAlertColour;
+    }*/
+    
+    //-----
+    
     public String getName() {
         return playername;
     }
@@ -50,14 +90,20 @@ public class BSPlayer {
     }
 
     public ProxiedPlayer getProxiedPlayer() {
-        return ProxyServer.getInstance().getPlayer( playername );
+        return ProxyServer.getInstance().getPlayer(playername);
     }
 
     public void sendMessage( String message ) {
         for ( String line : message.split( "\n" ) ) {
-            getProxiedPlayer().sendMessage( line );
+            //getProxiedPlayer().sendMessage( line );
+        	//getProxiedPlayer().sendMessage(new ComponentBuilder(line).create());
+        	getProxiedPlayer().sendMessage(new TextComponent(line));
         }
     }
+    
+    public void sendMessage(TextComponent message) {
+    	getProxiedPlayer().sendMessage(new TextComponent(message));
+	}
 
     public String getChannel() {
         return channel;
@@ -106,14 +152,6 @@ public class BSPlayer {
 
     public void setDND( boolean dnd ) {
         this.dnd = dnd;
-    }
-
-    public boolean acceptingTeleports() {
-        return this.acceptingTeleports;
-    }
-
-    public void setAcceptingTeleports( boolean tp ) {
-        this.acceptingTeleports = tp;
     }
 
     public void addIgnore( String player ) {
@@ -169,42 +207,8 @@ public class BSPlayer {
         return null;
     }
 
-    public void setDeathBackLocation( Location loc ) {
-        deathBackLocation = loc;
-        lastBack = true;
-    }
-
-    public boolean hasDeathBackLocation() {
-        return deathBackLocation != null;
-    }
-
-    public void setTeleportBackLocation( Location loc ) {
-        teleportBackLocation = loc;
-        lastBack = false;
-    }
-
-    public Location getLastBackLocation() {
-        if ( lastBack ) {
-            return deathBackLocation;
-        } else {
-            return teleportBackLocation;
-        }
-    }
-
     public ServerData getServerData() {
         return ChatManager.getServerData( getServer() );
-    }
-
-    public boolean hasTeleportBackLocation() {
-        return teleportBackLocation != null;
-    }
-
-    public Location getDeathBackLocation() {
-        return deathBackLocation;
-    }
-
-    public Location getTeleportBackLocation() {
-        return teleportBackLocation;
     }
 
     public boolean hasReply() {
@@ -258,20 +262,25 @@ public class BSPlayer {
         updateDisplayName();
     }
 
-    public void updatePlayer() {
-        try {
+    public void updatePlayer() 
+    {
+        try 
+        {
             ChatManager.sendPlayer( playername, getServer(), false );
-        } catch ( SQLException e ) {
-            // TODO Auto-generated catch block
+        } 
+        catch ( SQLException e )
+        {
             e.printStackTrace();
         }
     }
 
-    public void sendMessageToPlayer( BSPlayer target, String message ) {
+    public void sendMessageToPlayer( BSPlayer target, String message )
+    {
         target.sendMessage( Messages.PRIVATE_MESSAGE_RECEIVE.replace( "{player}", getDisplayingName() ).replace( "{message}", message ) );
     }
 
-    public void sendToServer( String targetName ) {
+    public void sendToServer( String targetName )
+    {
         getProxiedPlayer().connect( ProxyServer.getInstance().getServerInfo( targetName ) );
     }
 
@@ -300,10 +309,6 @@ public class BSPlayer {
 
     public void setReplyPlayer( String name ) {
         replyPlayer = name;
-    }
-
-    public HashMap<String, ArrayList<Home>> getHomes() {
-        return homes;
     }
 
     public boolean firstConnect() {

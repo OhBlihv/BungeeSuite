@@ -49,7 +49,7 @@ public class SQLManager {
     /**
      * @return Returns a free connection from the pool of connections. Creates a new connection if there are none available
      */
-    private static ConnectionHandler getConnection() {
+    public static ConnectionHandler getConnection() {
         for ( ConnectionHandler c : connections ) {
             if ( !c.isUsed() ) {
                 return c;

@@ -3,118 +3,299 @@ package com.minecraftdimensions.bungeesuite.managers;
 import com.minecraftdimensions.bungeesuite.BungeeSuite;
 import com.minecraftdimensions.bungeesuite.Utilities;
 import com.minecraftdimensions.bungeesuite.configs.ChatConfig;
-import com.minecraftdimensions.bungeesuite.configs.MainConfig;
-import com.minecraftdimensions.bungeesuite.configs.SpawnConfig;
 import com.minecraftdimensions.bungeesuite.objects.BSPlayer;
 import com.minecraftdimensions.bungeesuite.objects.Messages;
+import com.minecraftdimensions.bungeesuite.tasks.SendPluginMessage;
+
+import net.auscraft.GlobalTablist.GlobalTablist;
 import net.md_5.bungee.api.CommandSender;
 import net.md_5.bungee.api.ProxyServer;
+import net.md_5.bungee.api.chat.TextComponent;
+import net.md_5.bungee.api.config.ServerInfo;
 import net.md_5.bungee.api.connection.ProxiedPlayer;
 import net.md_5.bungee.api.connection.Server;
+import net.md_5.bungee.api.ChatColor;
 
+import java.io.ByteArrayOutputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
-public class PlayerManager {
+public class PlayerManager
+{
 
     public static HashMap<String, BSPlayer> onlinePlayers = new HashMap<>();
+    public static HashMap<UUID, BSPlayer> onlinePlayersUUID = new HashMap<>();
     static ProxyServer proxy = ProxyServer.getInstance();
     static BungeeSuite plugin = BungeeSuite.instance;
     public static ArrayList<ProxiedPlayer> kickedPlayers = new ArrayList<ProxiedPlayer>();
 
-    public static boolean playerExists( String player ) {
-        if ( getSimilarPlayer( player ) != null ) {
+    public static boolean playerExists(UUID uuid, String player)
+    {
+    	boolean exists = false;
+    	try
+    	{
+    		LoggingManager.log("UUID: " + uuid + " for " + player);
+    		if(!SQLManager.existanceQuery("SELECT uuid FROM BungeePlayers WHERE uuid = '" + uuid + "'"))
+    		{
+    			LoggingManager.log("" + SQLManager.existanceQuery("SELECT playername FROM BungeePlayers WHERE playername = '" + player + "'"));
+    			return SQLManager.existanceQuery("SELECT playername FROM BungeePlayers WHERE playername = '" + player + "'");
+    		}
+    		else
+    		{
+    			return true;
+    		}
+    	}
+    	catch(NullPointerException e)
+    	{
+    		//Player does not exist.
+    		LoggingManager.log("UUID" + uuid + " is not attached to any previous player");
+    	}
+        return exists;
+    }
+    
+    public static boolean playerExists(String player)
+    {
+        if (getSimilarPlayer(player) != null)
+        {
             return true;
         }
-        return SQLManager.existanceQuery( "SELECT playername FROM BungeePlayers WHERE playername = '" + player + "'" );
+        return SQLManager.existanceQuery("SELECT playername FROM BungeePlayers WHERE playername = '" + player + "'");
     }
 
-    public static void loadPlayer( ProxiedPlayer player ) throws SQLException {
+    public static void loadPlayer( ProxiedPlayer player ) throws SQLException 
+    {
+    	String playername = player.getName();
         String nickname = null;
         String channel = null;
         boolean muted = false;
         boolean chatspying = false;
-        boolean dnd = false;
-        boolean tps = true;
-        if ( playerExists( player.getName() ) ) {
-            ResultSet res = SQLManager.sqlQuery( "SELECT playername,nickname,channel,muted,chat_spying,dnd,tps FROM BungeePlayers WHERE playername = '" + player + "'" );
-            while ( res.next() ) {
-                nickname = res.getString( "nickname" );
-                if ( nickname != null ) {
-                    nickname = Utilities.colorize( nickname );
+        UUID uuid = null;
+        //String alertColour = "&e";
+        //boolean alertToggle = true;
+        
+        if (playerExists(player.getUniqueId(), playername))
+        {
+        	ResultSet res = null;
+            boolean uuidRecord = false;
+        	
+        	//UUID
+        	if(SQLManager.existanceQuery("SELECT playername FROM BungeePlayers WHERE UUID = '" + player.getUniqueId() + "'"))
+        	{
+        		res = SQLManager.sqlQuery( "SELECT playername,nickname,channel,muted,chat_spying,UUID FROM BungeePlayers WHERE UUID = '" + player.getUniqueId() + "'" );
+        		uuidRecord = true;
+        		
+        	}
+        	//Playername
+        	else if(SQLManager.existanceQuery("SELECT playername FROM BungeePlayers WHERE playername = '" + player.getName() + "'"))
+        	{
+        		res = SQLManager.sqlQuery( "SELECT playername,nickname,channel,muted,chat_spying,UUID FROM BungeePlayers WHERE playername = '" + player.getName() + "'" );
+            	
+        	}
+            	
+            while(res.next())
+            {
+                nickname = res.getString("nickname");
+                if (nickname != null) 
+                {
+                    nickname = Utilities.colorize(nickname);
                 }
-                channel = res.getString( "channel" );
-                muted = res.getBoolean( "muted" );
-                chatspying = res.getBoolean( "chat_spying" );
-                dnd = res.getBoolean( "dnd" );
-                tps = res.getBoolean( "tps" );
+                channel = res.getString("channel");
+                muted = res.getBoolean("muted");
+                chatspying = res.getBoolean("chat_spying");
+                String uuidNull = res.getString("UUID");
+                if(uuidNull != null)
+                {
+                	uuid = UUID.fromString(uuidNull);
+                }
+                else
+                {
+                	uuid = player.getUniqueId();
+                }
+                if(!uuidRecord)
+                {
+                	checkUUID(uuid, playername);
+                }
+                playername = res.getString("playername");
+            	if(!playername.equals(player.getName()))
+            	{
+            		if(uuidNull != null)
+            		{
+            			changePlayerName(uuidNull, player.getName());
+            		}
+            		playername = player.getName();
+            	}
+                //alertColour = res.getString("alertToggle");
+                //alertToggle = res.getBoolean("alertToggle");
             }
             res.close();
-            BSPlayer bsplayer = new BSPlayer( player.getName(), nickname, channel, muted, chatspying, dnd, tps );
-            addPlayer( bsplayer );
+            BSPlayer bsplayer = new BSPlayer(playername, nickname, channel, muted, chatspying, false, uuid);
+            addPlayer(bsplayer);
             IgnoresManager.LoadPlayersIgnores( bsplayer );
-            HomesManager.loadPlayersHomes( bsplayer );
-        } else {
-            createNewPlayer( player );
+        } 
+        else
+        {
+            createNewPlayer(player);
         }
     }
 
-    private static void createNewPlayer( final ProxiedPlayer player ) throws SQLException {
+    private static void createNewPlayer( final ProxiedPlayer player ) throws SQLException 
+    {
         String ip = player.getAddress().getAddress().toString();
-        SQLManager.standardQuery( "INSERT INTO BungeePlayers (playername,lastonline,ipaddress,channel) VALUES ('" + player.getName() + "', NOW(), '" + ip.substring( 1, ip.length() ) + "','" + ChatConfig.defaultChannel + "')" );
-        final BSPlayer bsplayer = new BSPlayer( player.getName(), null, ChatConfig.defaultChannel, false, false, false, true );
-        if ( MainConfig.newPlayerBroadcast ) {
-            sendBroadcast( Messages.NEW_PLAYER_BROADCAST.replace( "{player}", player.getName() ) );
-        }
+        UUID uuid = player.getUniqueId();
+        SQLManager.standardQuery( "INSERT INTO BungeePlayers (playername,lastonline,ipaddress,channel,UUID) VALUES ('" + player.getName() + "', NOW(), '" + ip.substring( 1, ip.length() ) + "','" + ChatConfig.defaultChannel + "','" + uuid + "')" );
+        final BSPlayer bsplayer = new BSPlayer(player.getName(), null, ChatConfig.defaultChannel, false, false, false, uuid/*, "&e", true*/);
+        sendBroadcast( Messages.NEW_PLAYER_BROADCAST.replace( "{player}", player.getName() ) );
         addPlayer( bsplayer );
+    }
 
-        if ( SpawnConfig.newspawn && SpawnManager.NewPlayerSpawn != null ) {
-            SpawnManager.newPlayers.add( player );
-            ProxyServer.getInstance().getScheduler().schedule( BungeeSuite.instance, new Runnable() {
-
-                @Override
-                public void run() {
-                    SpawnManager.sendPlayerToNewPlayerSpawn( bsplayer, true );
-                    SpawnManager.newPlayers.remove( player );
-                }
-
-            }, 300, TimeUnit.MILLISECONDS );
-
+    private static void addPlayer( BSPlayer player ) 
+    {
+        onlinePlayersUUID.put(player.getUUID(), player);
+        onlinePlayers.put(player.getName(), player);
+        if(!player.firstConnect())
+        {
+        	String login = Utilities.colorize("&6&l|| &b«« &aWelcome back &6{player}!");
+        	LoggingManager.log( login.replace("{player}", player.getName()));
         }
     }
 
-    private static void addPlayer( BSPlayer player ) {
-        onlinePlayers.put( player.getName(), player );
-        LoggingManager.log( Messages.PLAYER_LOAD.replace( "{player}", player.getName() ) );
-    }
-
-    public static void unloadPlayer( String player ) {
-        if ( onlinePlayers.containsKey( player ) ) {
-            onlinePlayers.remove( player );
-            LoggingManager.log( Messages.PLAYER_UNLOAD.replace( "{player}", player ) );
+    public static void unloadPlayer(String player) 
+    {
+        if (onlinePlayers.containsKey(player))
+        {
+            onlinePlayers.remove(player);
+            onlinePlayersUUID.remove(player);
+            String logout = Utilities.colorize("&6&l|| &b«« &cBye for now &6{player}!");
+            LoggingManager.log( logout.replace("{player}", player));
         }
     }
 
-    public static BSPlayer getPlayer( String player ) {
-        return onlinePlayers.get( player );
+    public static BSPlayer getPlayer(String player) 
+    {
+        return onlinePlayers.get(player);
+    }
+    
+    public static BSPlayer getPlayer(UUID uuid) 
+    {
+        return onlinePlayersUUID.get(uuid);
+    }
+    
+    //Used for AusWarnings, but should be useful for other things too
+    public static boolean hasPermission(String playerName, String permission, String extra)
+    {
+    	ByteArrayOutputStream b = new ByteArrayOutputStream();
+        DataOutputStream out = new DataOutputStream( b );
+        try 
+        {
+            out.writeUTF("hasPermission");
+            out.writeUTF(playerName);
+            out.writeUTF(permission);
+            out.writeUTF(extra);
+        } 
+        catch ( IOException e )
+        {
+            e.printStackTrace();
+        }
+        //TODO: Change me back to "Survival"
+        ServerInfo server = BungeeSuite.proxy.getServerInfo("lobby");
+        BungeeSuite.proxy.getScheduler().runAsync( BungeeSuite.instance, new SendPluginMessage( "BungeeSuiteChat", server, b ) );
+    	return true;
     }
 
-    public static BSPlayer getSimilarPlayer( String player ) {
-        if ( onlinePlayers.containsKey( player ) ) {
-            return onlinePlayers.get( player );
+    public static BSPlayer getSimilarPlayer( String player ) 
+    {
+        if (onlinePlayers.containsKey( player ))
+        {
+            return onlinePlayers.get(player);
         }
-        for ( String p : onlinePlayers.keySet() ) {
-            if ( p.toLowerCase().contains( player.toLowerCase() ) ) {
-                return onlinePlayers.get( p );
+        for (String p : onlinePlayers.keySet()) 
+        {
+            if (p.toLowerCase().contains(player.toLowerCase())) 
+            {
+                return onlinePlayers.get(p);
             }
         }
         return null;
     }
 
+    //UUID
+    public static void setUUID(UUID uuid, String playername)
+    {
+    	try
+    	{
+    		SQLManager.standardQuery("UPDATE BungeePlayers SET UUID = '" + uuid + "' WHERE playername = '" + playername + "'");
+    	}
+    	catch(SQLException e)
+    	{
+    		e.printStackTrace();
+    	}
+    }
+    
+    public static void setUUID(String player)
+    {
+    	try
+    	{
+    		UUID uuid = getPlayer(player).getUUID();
+    		SQLManager.standardQuery("UPDATE BungeePlayers SET UUID = '" + uuid + "' WHERE playername = '" + getPlayer(player).getName() + "'");
+    	}
+    	catch(SQLException e)
+    	{
+    		e.printStackTrace();
+    	}
+    }
+    
+    public static void checkUUID(UUID uuid, String playername)
+    {
+    	try
+    	{
+    		if(!SQLManager.existanceQuery("SELECT uuid FROM BungeePlayers WHERE uuid = '" + uuid + "'"))
+    		{
+    			SQLManager.standardQuery("UPDATE BungeePlayers SET UUID = '" + uuid + "' WHERE playername = '" + playername + "'");
+    		}
+    	}
+    	catch(SQLException e)
+    	{
+    		e.printStackTrace();
+    	}
+    }
+    
+    //TODO: Link this up with the runnable
+    //Get Aliases for given player
+    public static List<String> getAliases(UUID uuid) throws Throwable
+    {
+    	return null;
+    }
+    
+    //Used when a player joins the server with a different name to their previous one (identified by UUID)
+    public static void changePlayerName(BSPlayer player, String newName)
+    {
+    	player.setPlayerName(newName);
+    }
+    
+    //Changes SQL
+    public static void changePlayerName(String UUID, String newName)
+    {
+    	try
+    	{
+    	    SQLManager.standardQuery("UPDATE BungeePlayers SET playername = '" + newName + "' WHERE UUID = '" + UUID + "'");
+    	    LoggingManager.log("Successfully updated " + newName + "'s IGN");
+    	}
+    	catch(SQLException e)
+    	{
+    		e.printStackTrace();
+    	}
+    }
+    
+    //END
+    
     public static void sendPrivateMessageToPlayer( BSPlayer from, String receiver, String message ) {
         BSPlayer rec = getSimilarPlayer( receiver );
         if ( from.isMuted() && ChatConfig.mutePrivateMessages ) {
@@ -138,7 +319,8 @@ public class PlayerManager {
 
     public static void sendMessageToPlayer( String player, String message ) {
         if ( player.equals( "CONSOLE" ) ) {
-            ProxyServer.getInstance().getConsole().sendMessage( message );
+        	//ProxyServer.getInstance().getConsole().sendMessage(new ComponentBuilder(message).create());
+        	ProxyServer.getInstance().getConsole().sendMessage(new TextComponent(message));
         } else {
             for ( String line : message.split( "\n" ) ) {
                 getPlayer( player ).sendMessage( line );
@@ -165,7 +347,8 @@ public class PlayerManager {
     public static void sendBroadcast( String message ) {
         for ( ProxiedPlayer p : proxy.getPlayers() ) {
             for ( String line : message.split( "\n" ) ) {
-                p.sendMessage( line );
+                //p.sendMessage(new ComponentBuilder(line).create());
+            	p.sendMessage(line);
             }
         }
         LoggingManager.log( message );
@@ -231,7 +414,8 @@ public class PlayerManager {
     private static void sendServerMessage( Server server, String message ) {
         for ( ProxiedPlayer p : server.getInfo().getPlayers() ) {
             for ( String line : message.split( "\n" ) ) {
-                p.sendMessage( line );
+                //p.sendMessage( line );
+                p.sendMessage(line);
             }
         }
     }
@@ -274,19 +458,27 @@ public class PlayerManager {
 
     }
 
-    public static boolean nickNameExists( String nick ) {
+    public static boolean nickNameExists( String nick ) 
+    {
         return SQLManager.existanceQuery( "SELECT nickname FROM BungeePlayers WHERE nickname ='" + nick + "'" );
     }
 
-    public static void setPlayersNickname( String p, String nick ) throws SQLException {
-        if ( isPlayerOnline( p ) ) {
+    public static void setPlayersNickname( String p, String nick ) throws SQLException 
+    {
+        if ( isPlayerOnline( p ) ) 
+        {
             getPlayer( p ).setNickname( nick );
             getPlayer( p ).updateDisplayName();
             getPlayer( p ).updatePlayer();
+            
+            GlobalTablist.getInstance().updateNick(p);
         }
-        if ( nick == null ) {
+        if ( nick == null ) 
+        {
             SQLManager.standardQuery( "UPDATE BungeePlayers SET nickname =NULL WHERE playername ='" + p + "'" );
-        } else {
+        } 
+        else
+        {
             SQLManager.standardQuery( "UPDATE BungeePlayers SET nickname ='" + nick + "' WHERE playername ='" + p + "'" );
         }
     }
@@ -342,10 +534,21 @@ public class PlayerManager {
     }
 
     public static void removeNickname( String target ) throws SQLException {
+    	GlobalTablist.getInstance().updateNick(target);
         setPlayersNickname( target, null );
     }
 
     public static Collection<BSPlayer> getPlayers() {
         return onlinePlayers.values();
     }
+
+    public static BSPlayer getSimilarNickPlayer(String nick) {
+        for ( BSPlayer p : onlinePlayers.values() ) {
+            if ( ChatColor.stripColor(p.getNickname()).toLowerCase().contains( nick.toLowerCase() ) ) {
+                return p;
+            }
+        }
+        return getSimilarPlayer(nick);
+    }
+    
 }
