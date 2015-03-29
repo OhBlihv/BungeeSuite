@@ -36,7 +36,8 @@ public class PlayerListener implements Listener {
         	boolean isMusketeer = false;
         	switch(name)
         	{
-        		case "OhBlihv": case "StabbyInc": case "CAMM_": case "Jedi_Vader20": case "LikingSquares": case "Mallorean": case "Blivvykins": case "Obliviator": isMusketeer = true; break;
+        		case "OhBlihv": case "StabbyInc": case "CAMM_": case "Jedi_Vader20": case "LikingSquares": case "Mallorean": case "Blivvykins": case "Obliviator": isMusketeer = true;
+        		break;
         	}
         	
         	if (!isMusketeer)

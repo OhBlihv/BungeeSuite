@@ -40,40 +40,6 @@ public class ChatMessageListener implements Listener
         DataInputStream in = new DataInputStream(new ByteArrayInputStream(event.getData()));
         String task = in.readUTF();
         
-        //hasPermission
-        if(task.equals("sendHasPermission"))
-        {
-        	try
-        	{
-	            String player = in.readUTF();
-	            String permission = in.readUTF();
-	            String extra = in.readUTF();
-	            boolean has = in.readBoolean();
-	            
-	            if(has)
-	            {
-	            	/*switch(permission)
-	            	{
-		            	case "auswarnings.see": Printout.doLoginMessage(player, extra);
-		            		break;
-		            	default:
-		            		break;
-	            	}*/
-	            }
-	            else
-	            {
-	            	//Call AusWarnings function that prints a 'you do not have permission to use that command'
-	            	//Unless its the login permission
-	            	//Then just dont reply
-	            }
-        	}
-        	catch(Exception e)
-        	{
-        		e.printStackTrace();
-        	}
-        	return;
-        }
-        
         if(task.equals("Broadcast"))
         {
             String msg = in.readUTF();

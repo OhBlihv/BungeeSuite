@@ -4,7 +4,6 @@ import com.minecraftdimensions.bungeesuite.configs.ChatConfig;
 import com.minecraftdimensions.bungeesuite.managers.ChatManager;
 
 import net.md_5.bungee.api.ProxyServer;
-import net.md_5.bungee.api.chat.TextComponent;
 import net.md_5.bungee.api.config.ServerInfo;
 import net.md_5.bungee.api.connection.ProxiedPlayer;
 import net.md_5.bungee.api.connection.Server;
@@ -93,17 +92,14 @@ public class BSPlayer {
         return ProxyServer.getInstance().getPlayer(playername);
     }
 
-    public void sendMessage( String message ) {
+    @SuppressWarnings("deprecation")
+	public void sendMessage( String message ) {
         for ( String line : message.split( "\n" ) ) {
             //getProxiedPlayer().sendMessage( line );
         	//getProxiedPlayer().sendMessage(new ComponentBuilder(line).create());
-        	getProxiedPlayer().sendMessage(new TextComponent(line));
+        	getProxiedPlayer().sendMessage(line);
         }
     }
-    
-    public void sendMessage(TextComponent message) {
-    	getProxiedPlayer().sendMessage(new TextComponent(message));
-	}
 
     public String getChannel() {
         return channel;
