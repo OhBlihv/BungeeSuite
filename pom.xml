@@ -4,7 +4,7 @@
 
     <groupId>com.minecraftdimensions</groupId>
     <artifactId>BungeeSuite</artifactId>
-    <version>0.65-AusCraft</version>
+    <version>0.67-AusCraft</version>
     <packaging>jar</packaging>
 
     <name>BungeeSuite</name>
@@ -14,12 +14,6 @@
         <repository>
             <id>sonatype-oss-public</id>
             <url>https://oss.sonatype.org/content/groups/public/</url>
-            <releases>
-                <enabled>true</enabled>
-            </releases>
-            <snapshots>
-                <enabled>true</enabled>
-            </snapshots>
         </repository>
     </repositories>
 
@@ -30,25 +24,6 @@
             <version>1.8-SNAPSHOT</version>
             <scope>provided</scope>
         </dependency>
-        <dependency>
-            <groupId>commons-lang</groupId>
-            <artifactId>commons-lang</artifactId>
-            <version>2.3</version>
-        </dependency>
-        <dependency>
-            <groupId>org.json</groupId>
-    		<artifactId>JSON</artifactId>
-   			<version>20141113</version>
-            <scope>system</scope>
-            <systemPath>${project.basedir}/lib/json-20141113.jar</systemPath>
-        </dependency>
-        <dependency>
-            <groupId>net.auscraft</groupId>
-            <artifactId>GlobalTablist</artifactId>
-            <version>1.3</version>
-            <scope>system</scope>
-            <systemPath>${project.basedir}/lib/GlobalTablist-1.3.jar</systemPath>
-        </dependency>
     </dependencies>
     <build>
         <finalName>${project.name}-${project.version}</finalName>
@@ -56,7 +31,7 @@
             <resource>
                 <directory>${project.basedir}/src/main/resources</directory>
                 <includes>
-                    <include>**</include>
+                    <include>*</include>
                 </includes>
                 <filtering>true</filtering>
             </resource>
@@ -67,10 +42,8 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>3.1</version>
                 <configuration>
-                    <source>1.7</source>
-                    <target>1.7</target>
-                    <showWarnings>true</showWarnings>
-                    <showDeprecation>true</showDeprecation>
+                    <source>1.8</source>
+                    <target>1.8</target>
                 </configuration>
             </plugin>
 

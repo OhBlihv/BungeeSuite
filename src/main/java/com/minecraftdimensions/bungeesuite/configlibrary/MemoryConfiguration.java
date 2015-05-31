@@ -2,58 +2,71 @@ package com.minecraftdimensions.bungeesuite.configlibrary;
 
 import java.util.Map;
 
-public class MemoryConfiguration extends MemorySection implements Configuration {
-    protected Configuration defaults;
-    protected MemoryConfigurationOptions options;
+public class MemoryConfiguration extends MemorySection implements Configuration
+{
+	protected Configuration defaults;
+	protected MemoryConfigurationOptions options;
 
-    public MemoryConfiguration() {}
-    public MemoryConfiguration(Configuration defaults) 
-    {
-        this.defaults = defaults;
-    }
+	public MemoryConfiguration()
+	{
+	}
 
-    @Override
-    public void addDefault(String path, Object value) {
+	public MemoryConfiguration(Configuration defaults)
+	{
+		this.defaults = defaults;
+	}
 
-        if (defaults == null) {
-            defaults = new MemoryConfiguration();
-        }
+	@Override
+	public void addDefault(String path, Object value)
+	{
 
-        defaults.set(path, value);
-    }
+		if (defaults == null)
+		{
+			defaults = new MemoryConfiguration();
+		}
 
-    public void addDefaults(Map<String, Object> defaults) {
+		defaults.set(path, value);
+	}
 
-        for (Map.Entry<String, Object> entry : defaults.entrySet()) {
-            addDefault(entry.getKey(), entry.getValue());
-        }
-    }
+	public void addDefaults(Map<String, Object> defaults)
+	{
 
-    public void addDefaults(Configuration defaults) {
+		for (Map.Entry<String, Object> entry : defaults.entrySet())
+		{
+			addDefault(entry.getKey(), entry.getValue());
+		}
+	}
 
-        addDefaults(defaults.getValues(true));
-    }
+	public void addDefaults(Configuration defaults)
+	{
 
-    public void setDefaults(Configuration defaults) {
+		addDefaults(defaults.getValues(true));
+	}
 
-        this.defaults = defaults;
-    }
+	public void setDefaults(Configuration defaults)
+	{
 
-    public Configuration getDefaults() {
-        return defaults;
-    }
+		this.defaults = defaults;
+	}
 
-    @Override
-    public ConfigurationSection getParent() {
-        return null;
-    }
+	public Configuration getDefaults()
+	{
+		return defaults;
+	}
 
-    public MemoryConfigurationOptions options()
-    {
-        if (options == null) {
-            options = new MemoryConfigurationOptions(this);
-        }
+	@Override
+	public ConfigurationSection getParent()
+	{
+		return null;
+	}
 
-        return options;
-    }
+	public MemoryConfigurationOptions options()
+	{
+		if (options == null)
+		{
+			options = new MemoryConfigurationOptions(this);
+		}
+
+		return options;
+	}
 }

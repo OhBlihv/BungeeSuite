@@ -9,71 +9,92 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 
-public abstract class FileConfiguration extends MemoryConfiguration {
-    public FileConfiguration() {
-        super();
-    }
+public abstract class FileConfiguration extends MemoryConfiguration
+{
+	public FileConfiguration()
+	{
+		super();
+	}
 
-    public FileConfiguration(Configuration defaults) {
-        super(defaults);
-    }
+	public FileConfiguration(Configuration defaults)
+	{
+		super(defaults);
+	}
 
-    public void save(File file) throws IOException {
-        file.getParentFile().mkdirs();
+	public void save(File file) throws IOException
+	{
+		file.getParentFile().mkdirs();
 
-        String data = saveToString();
+		String data = saveToString();
 
-        FileWriter writer = new FileWriter(file);
+		FileWriter writer = new FileWriter(file);
 
-        try {
-            writer.write(data);
-        } finally {
-            writer.close();
-        }
-    }
-    public void save(String file) throws IOException {
+		try
+		{
+			writer.write(data);
+		}
+		finally
+		{
+			writer.close();
+		}
+	}
 
-        save(new File(file));
-    }
+	public void save(String file) throws IOException
+	{
 
-    public abstract String saveToString();
-    public void load(File file) throws FileNotFoundException, IOException, InvalidConfigurationException {
-        load(new FileInputStream(file));
-    }
-    public void load(InputStream stream) throws IOException, InvalidConfigurationException {
+		save(new File(file));
+	}
 
-        InputStreamReader reader = new InputStreamReader(stream);
-        StringBuilder builder = new StringBuilder();
-        BufferedReader input = new BufferedReader(reader);
+	public abstract String saveToString();
 
+	public void load(File file) throws FileNotFoundException, IOException, InvalidConfigurationException
+	{
+		load(new FileInputStream(file));
+	}
 
-        try {
-            String line;
+	public void load(InputStream stream) throws IOException, InvalidConfigurationException
+	{
 
-            while ((line = input.readLine()) != null) {
-                builder.append(line);
-                builder.append('\n');
-            }
-        } finally {
-            input.close();
-        }
+		InputStreamReader reader = new InputStreamReader(stream);
+		StringBuilder builder = new StringBuilder();
+		BufferedReader input = new BufferedReader(reader);
 
-        loadFromString(builder.toString());
-    }
+		try
+		{
+			String line;
 
-    public void load(String file) throws FileNotFoundException, IOException, InvalidConfigurationException {
+			while ((line = input.readLine()) != null)
+			{
+				builder.append(line);
+				builder.append('\n');
+			}
+		}
+		finally
+		{
+			input.close();
+		}
 
-        load(new File(file));
-    }
-    public abstract void loadFromString(String contents) throws InvalidConfigurationException;
-    protected abstract String buildHeader();
+		loadFromString(builder.toString());
+	}
 
-    @Override
-    public FileConfigurationOptions options() {
-        if (options == null) {
-            options = new FileConfigurationOptions(this);
-        }
+	public void load(String file) throws FileNotFoundException, IOException, InvalidConfigurationException
+	{
 
-        return (FileConfigurationOptions) options;
-    }
+		load(new File(file));
+	}
+
+	public abstract void loadFromString(String contents) throws InvalidConfigurationException;
+
+	protected abstract String buildHeader();
+
+	@Override
+	public FileConfigurationOptions options()
+	{
+		if (options == null)
+		{
+			options = new FileConfigurationOptions(this);
+		}
+
+		return (FileConfigurationOptions) options;
+	}
 }
