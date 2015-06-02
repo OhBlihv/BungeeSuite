@@ -35,8 +35,6 @@ public class BungeeSuite extends Plugin
 		{
 			DatabaseTableManager.createDefaultTables();
 			ChatManager.loadChannels();
-			PrefixSuffixManager.loadPrefixes();
-			PrefixSuffixManager.loadSuffixes();
 		}
 		else
 		{

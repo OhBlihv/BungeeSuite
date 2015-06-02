@@ -12,6 +12,7 @@ import com.minecraftdimensions.bungeesuite.objects.ServerData;
 import com.minecraftdimensions.bungeesuite.tasks.SendPluginMessage;
 
 import net.md_5.bungee.api.ChatColor;
+import net.md_5.bungee.api.ProxyServer;
 import net.md_5.bungee.api.config.ServerInfo;
 import net.md_5.bungee.api.connection.ProxiedPlayer;
 import net.md_5.bungee.api.connection.Server;
@@ -36,7 +37,20 @@ public class ChatManager
 		Config chan = Channels.channelsConfig;
 		loadChannel("Global", chan.getString("Channels.Global", Messages.CHANNEL_DEFAULT_GLOBAL));
 		loadChannel("Admin", chan.getString("Channels.Admin", Messages.CHANNEL_DEFAULT_ADMIN));
+		for (String servername : ProxyServer.getInstance().getServers().keySet()) 
+		{
+            loadServerData(servername, chan.getString("Channels.Servers." + servername + ".Shortname", servername.substring( 0, 1 )));
+        }
 	}
+	
+	private static void loadServerData(String name, String shortName) 
+	{
+        ServerData d = new ServerData(name, shortName);
+        if (serverData.get(name) == null) 
+        {
+            serverData.put(name, d);
+        }
+    }
 
 	public static void loadChannel(String name, String format)
 	{
@@ -125,28 +139,48 @@ public class ChatManager
 
 	public static void sendPlayer(String player, Server server, boolean serverConnect)
 	{
-		BSPlayer p = PlayerManager.getPlayer(player);
+		sendPlayer(PlayerManager.getPlayer(player), server.getInfo(), serverConnect);
+	}
+	
+	public static void sendPlayer(BSPlayer player, ServerInfo server, boolean serverConnect)
+	{
 		if (serverConnect)
 		{
-			setPlayerToForcedChannel(p);
+			setPlayerToForcedChannel(player);
 		}
 		ByteArrayOutputStream b = new ByteArrayOutputStream();
 		DataOutputStream out = new DataOutputStream(b);
 		try
 		{
 			out.writeUTF("SendPlayer");
-			out.writeUTF(p.getName());
-			out.writeUTF(p.getChannel());
-			out.writeBoolean(p.isMuted());
-			out.writeUTF(p.getNickname());
-			out.writeUTF(p.getUUID().toString());
-			out.writeBoolean(p.isAFK());
+			out.writeUTF(player.getName());
+			out.writeUTF(player.getChannel());
+			out.writeBoolean(player.isMuted());
+			out.writeUTF(player.getNickname());
+			out.writeUTF(player.getUUID().toString());
+			out.writeBoolean(player.isAFK());
 		}
 		catch (IOException e)
 		{
 			e.printStackTrace();
 		}
-		sendPluginMessageTaskChat(server.getInfo(), b);
+		sendPluginMessageTaskChat(server, b);
+	}
+	
+	public static void unloadPlayer(String player, ServerInfo server)
+	{
+		ByteArrayOutputStream b = new ByteArrayOutputStream();
+		DataOutputStream out = new DataOutputStream(b);
+		try
+		{
+			out.writeUTF("UnloadPlayer");
+			out.writeUTF(player);
+		}
+		catch (IOException e)
+		{
+			e.printStackTrace();
+		}
+		sendPluginMessageTaskChat(server, b);
 	}
 
 	private static void setPlayerToForcedChannel(BSPlayer p)
@@ -178,7 +212,7 @@ public class ChatManager
 		BSPlayer sender = PlayerManager.getPlayer(senderName);
 		BSPlayer target;
 		nickname = Utilities.colorize(nickname);
-		if (nickname.length() > ChatConfig.nickNameLimit)
+		if (nickname.length() > 50)
 		{
 			sender.sendMessage(Messages.NICKNAME_TOO_LONG);
 			return;
@@ -217,7 +251,7 @@ public class ChatManager
 			}
 			return;
 		}
-		if (PlayerManager.nickNameExists(nickname) || PlayerManager.playerExists(nickname) && !target.getName().equals(nickname))
+		if (PlayerManager.getSimilarNickPlayer(nickname) != null || PlayerManager.nickNameExists(nickname) || PlayerManager.playerExists(nickname) && !target.getName().equals(nickname))
 		{
 			sender.sendMessage(Messages.NICKNAME_TAKEN);
 			return;
@@ -306,7 +340,7 @@ public class ChatManager
 		p.sendMessage(Messages.PLAYER_MUTED.replace("{player}", t.getDisplayingName()));
 	}
 
-	public static void reloadChat() throws IOException
+	public static void reloadChat()
 	{
 		ByteArrayOutputStream b = new ByteArrayOutputStream();
 		DataOutputStream out = new DataOutputStream(b);
@@ -324,17 +358,13 @@ public class ChatManager
 		}
 		channels.clear();
 		serverData.clear();
-		PrefixSuffixManager.affixes.clear();
 		ChatConfig.reload();
 		Channels.reload();
-		PrefixSuffixManager.loadPrefixes();
-		PrefixSuffixManager.loadSuffixes();
 		loadChannels();
 		for (ServerInfo s : BungeeSuite.proxy.getServers().values())
 		{
-			ChatManager.sendServerData(s);
+			//ChatManager.sendServerData(s);
 			ChatManager.sendDefaultChannelsToServer(s);
-			PrefixSuffixManager.sendPrefixAndSuffixToServer(s);
 		}
 		for (ProxiedPlayer p : BungeeSuite.proxy.getPlayers())
 		{
@@ -385,12 +415,20 @@ public class ChatManager
 		{
 			channel = "Global";
 		}
+		else if (channel.equalsIgnoreCase("Admin"))
+		{
+			channel = "Admin";
+		}
+		else
+		{
+			throw new NullPointerException("Channel " + channel + " does not exist!");
+		}
 		
 		Channel c = getSimilarChannel(channel);
 		setPlayersChannel(p, c, true);
 	}
 
-	public static void sendServerData(ServerInfo s)
+	/*public static void sendServerData(ServerInfo s)
 	{
 		ByteArrayOutputStream b = new ByteArrayOutputStream();
 		DataOutputStream out = new DataOutputStream(b);
@@ -407,7 +445,7 @@ public class ChatManager
 			e.printStackTrace();
 		}
 		sendPluginMessageTaskChat(s, b);
-	}
+	}*/
 
 	public static void sendGlobalChat(String player, String message, Server server)
 	{

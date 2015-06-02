@@ -34,7 +34,6 @@ public class PlayerManager
 	{
 		try
 		{
-			LoggingManager.log("UUID: " + uuid + " for " + player);
 			if (!SQLManager.existanceQuery("SELECT uuid FROM BungeePlayers WHERE uuid = '" + uuid + "'"))
 			{
 				return SQLManager.existanceQuery("SELECT playername FROM BungeePlayers WHERE playername = '" + player + "'");
@@ -171,7 +170,7 @@ public class PlayerManager
 	{
 		return onlinePlayersUUID.get(uuid);
 	}
-
+	
 	public static BSPlayer getSimilarPlayer(String playerName)
 	{
 		BSPlayer player = null;
@@ -313,13 +312,14 @@ public class PlayerManager
 
 	public static void sendBroadcast(String message)
 	{
-		for (ProxiedPlayer p : proxy.getPlayers())
+		proxy.broadcast(new TextComponent(message));
+		/*for (ProxiedPlayer p : proxy.getPlayers())
 		{
 			for (String line : message.split("\n"))
 			{
 				p.sendMessage(line);
 			}
-		}
+		}*/
 		LoggingManager.log(message);
 	}
 
@@ -351,7 +351,6 @@ public class PlayerManager
 			p.setAFK(false);
 			sendBroadcast(Messages.PLAYER_NOT_AFK.replace("{player}", p.getDisplayingName()));
 		}
-
 	}
 
 	public static ArrayList<BSPlayer> getChatSpies()
@@ -419,7 +418,6 @@ public class PlayerManager
 			return getPlayer(target).isMuted();
 		}
 		return SQLManager.existanceQuery("SELECT muted FROM BungeePlayers WHERE playername ='" + target + "' AND muted = 1");
-
 	}
 
 	public static void mutePlayer(String target) throws SQLException
@@ -492,7 +490,7 @@ public class PlayerManager
 				return p;
 			}
 		}
-		return getSimilarPlayer(nick);
+		return null;
 	}
 
 }

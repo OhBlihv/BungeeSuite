@@ -15,7 +15,7 @@ public class DatabaseTableManager
 		{
 			public void run()
 			{
-				if (SQLManager.doesTableExist(name))
+				if (!SQLManager.doesTableExist(name))
 				{
 					try
 					{

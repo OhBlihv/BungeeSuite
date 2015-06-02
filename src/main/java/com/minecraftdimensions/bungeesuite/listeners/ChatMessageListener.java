@@ -67,12 +67,12 @@ public class ChatMessageListener implements Listener
 				PlayerManager.sendMessageToPlayer(name, ChatColor.WHITE + p.getNickname() + ChatColor.RESET + ChatColor.GRAY + " is " + p.getName());
 			}
 		}
-		else if (task.equals("GetServerChannels"))
+		/*else if (task.equals("GetServerChannels"))
 		{
 			ChatManager.sendServerData(s.getInfo());
 			ChatManager.sendDefaultChannelsToServer(s.getInfo());
 			PrefixSuffixManager.sendPrefixAndSuffixToServer(s.getInfo());
-		}
+		}*/
 		else if (task.equals("AdminChat"))
 		{
 			String message = in.readUTF();

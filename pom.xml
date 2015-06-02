@@ -4,7 +4,7 @@
 
     <groupId>com.minecraftdimensions</groupId>
     <artifactId>BungeeSuite</artifactId>
-    <version>0.67-AusCraft</version>
+    <version>0.68-AusCraft</version>
     <packaging>jar</packaging>
 
     <name>BungeeSuite</name>
